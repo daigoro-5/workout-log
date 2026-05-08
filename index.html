@@ -568,10 +568,10 @@ async function syncToSheets(date) {
       // Content-Typeを指定しない → text/plain扱いでプリフライト不要
     });
     const json = await res.json();
-    if (json.status === 'ok') {
+    if (json.ok || json.status === 'ok') {
       setSyncStatus('ok', '同期済み');
     } else {
-      throw new Error(json.message || 'error');
+      throw new Error(json.message || json.error || 'error');
     }
   } catch (e) {
     setSyncStatus('err', '同期失敗');
@@ -584,13 +584,27 @@ async function loadFromSheets() {
   try {
     const res  = await fetch(SCRIPT_URL + '?action=getAll');
     const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message);
 
-    // ローカルにないデータだけマージ（ローカル優先）
+    // Apps Script は {ok:true, data:{date:[exercises]}} 形式で返す
+    if (!json.ok) throw new Error(json.error || json.message || 'error');
+
+    const data = json.data || {};
     let merged = 0;
-    (json.sessions || []).forEach(({ date, exercises: exArr }) => {
-      if (!sessions[date] && exArr && exArr.length) {
-        sessions[date] = exArr;
+
+    Object.keys(data).forEach(date => {
+      if (!sessions[date]) {
+        const exArr = data[date];
+        if (!exArr || !exArr.length) return;
+        // exId をローカルの exercises から補完
+        sessions[date] = exArr.map(ex => {
+          const found = exercises.find(e => e.name === ex.name);
+          return {
+            exId:     found ? found.id : -1,
+            name:     ex.name,
+            category: ex.category,
+            sets:     ex.sets || []
+          };
+        });
         merged++;
       }
     });
