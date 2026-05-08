@@ -360,6 +360,12 @@
     <span>日付</span>
     <input type="date" id="dateInput">
   </div>
+  <div class="h-field">
+    <span>⏱</span>
+    <input type="number" id="timerDurIn" min="10" max="600" step="5" value="60"
+      style="width:58px" onchange="saveTimerDur()" onclick="this.select()">
+    <span>秒</span>
+  </div>
   <div class="stat">
     <span id="statSets">0</span> セット &nbsp;·&nbsp; ボリューム <span id="statVol">0</span> kg
   </div>
@@ -923,7 +929,10 @@ function toggleDone(exIdx, setIdx) {
   workout[exIdx].sets[setIdx].done = !workout[exIdx].sets[setIdx].done;
   const nowDone = workout[exIdx].sets[setIdx].done;
   save(); renderAllWorkout(); calcStat();
-  if (nowDone) startIntervalTimer();
+  if (nowDone) {
+    unlockAudio(); // iOS: ユーザー操作の直後にAudioContextを解放
+    startIntervalTimer();
+  }
 }
 
 function updateWeight(exIdx, setIdx, val) {
@@ -1306,9 +1315,26 @@ function switchTab(tab) {
 
 // ── INTERVAL TIMER ────────────────────────────────────────────────────────────
 
-const TIMER_TOTAL = 60; // 秒
-let timerHandle  = null;
-let timerRemain  = TIMER_TOTAL;
+let TIMER_TOTAL = 60; // 秒（loadTimerDur()で上書き）
+let timerHandle = null;
+let timerRemain = TIMER_TOTAL;
+
+function saveTimerDur() {
+  const v = parseInt(document.getElementById('timerDurIn').value);
+  if (v >= 10 && v <= 600) {
+    TIMER_TOTAL = v;
+    localStorage.setItem('wt_timer_dur', v);
+  }
+}
+
+function loadTimerDur() {
+  const saved = localStorage.getItem('wt_timer_dur');
+  if (saved) {
+    TIMER_TOTAL = parseInt(saved);
+    const el = document.getElementById('timerDurIn');
+    if (el) el.value = TIMER_TOTAL;
+  }
+}
 
 function startIntervalTimer() {
   clearInterval(timerHandle);
@@ -1372,17 +1398,31 @@ function cancelTimer() {
   document.getElementById('itimerEl').classList.remove('done');
 }
 
+// AudioContext はタブをまたいで使い回す（iOS: 毎回 new すると suspended になる）
+let _audioCtx = null;
+
+function unlockAudio() {
+  try {
+    if (!_audioCtx) {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  } catch (_) {}
+}
+
 function playBeep() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // 短いビープを3回
+    unlockAudio();
+    const ctx = _audioCtx;
+    if (!ctx) return;
+    // 短いビープを3回（最後だけ高音）
     [0, 0.28, 0.56].forEach((t, i) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.value = i === 2 ? 1046 : 880; // 最後だけ高音
+      osc.frequency.value = i === 2 ? 1046 : 880;
       gain.gain.setValueAtTime(0.35, ctx.currentTime + t);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.22);
       osc.start(ctx.currentTime + t);
@@ -1480,6 +1520,7 @@ function exDragEnd(e) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
 loadState();
+loadTimerDur();
 renderCatSelects();
 renderAllLib();
 renderTmplSels();
