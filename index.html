@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>筋トレログ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f0e8; color: #2c2416;
+      height: 100dvh; display: flex; flex-direction: column; font-size: 14px;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: #ede8de; border-bottom: 1px solid #d8d0c4;
+      padding: 12px 20px; display: flex; align-items: center; gap: 14px;
+      flex-shrink: 0; flex-wrap: wrap;
+    }
+    header h1 { font-size: 20px; color: #e07020; font-weight: 700; white-space: nowrap; }
+    .h-field { display: flex; align-items: center; gap: 7px; font-size: 14px; color: #8a7966; }
+    .h-field input {
+      background: #f5f0e8; border: 1px solid #c8bfb0; color: #2c2416;
+      padding: 5px 9px; border-radius: 6px; font-size: 14px;
+    }
+    input[type="date"] { width: 148px; }
+    .stat {
+      font-size: 13px; color: #8a7966; background: #e8e0d4;
+      padding: 5px 12px; border-radius: 6px; white-space: nowrap; margin-left: auto;
+    }
+    .stat span { color: #c45800; font-weight: 600; }
+
+    /* ── MAIN 3-COLUMN LAYOUT ── */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      width: 248px; background: #ede8de; border-right: 1px solid #d8d0c4;
+      display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
+    }
+    .panel-left-body { flex: 1; overflow-y: auto; padding: 6px 10px 12px; }
+
+    /* ── CENTER PANEL ── */
+    .panel-center { flex: 1; overflow-y: auto; padding: 12px 16px; }
+    .workout-list { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+
+    /* ── RIGHT PANEL (calendar) ── */
+    .panel-right {
+      width: 310px; background: #ede8de; border-left: 1px solid #d8d0c4;
+      display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+    }
+
+    /* ── SECTION HEADERS ── */
+    .sec-head {
+      font-size: 10px; color: #a09080; text-transform: uppercase;
+      letter-spacing: .08em; padding: 10px 4px 4px; font-weight: 600;
+    }
+    .sec-head:first-child { padding-top: 4px; }
+
+    /* ── TEMPLATE ROW ── */
+    .tmpl-row { display: flex; gap: 5px; margin-bottom: 6px; }
+    .tmpl-row select {
+      flex: 1; background: #f5f0e8; border: 1px solid #c8bfb0; color: #2c2416;
+      padding: 4px 6px; border-radius: 6px; font-size: 12px; min-width: 0;
+    }
+
+    /* ── LIBRARY ── */
+    .cat-label {
+      font-size: 10px; color: #a09080; text-transform: uppercase; letter-spacing: .07em;
+      margin: 10px 0 4px; padding: 2px 6px; border-left: 2px solid #c8bfb0;
+      border-radius: 0 3px 3px 0; transition: color .15s;
+    }
+    .lib-item {
+      display: flex; align-items: center; gap: 4px;
+      background: #f0ebe0; border-radius: 6px; margin-bottom: 3px;
+      padding: 6px 8px; transition: background .12s;
+    }
+    .lib-item:hover { background: #e8e0d4; }
+    .lib-name { flex: 1; font-size: 13px; cursor: pointer; }
+    .lib-name:hover { color: #e07020; }
+    .iBtn {
+      background: none; border: none; cursor: pointer; color: #c0b4a4;
+      font-size: 12px; padding: 2px 4px; border-radius: 3px; flex-shrink: 0;
+    }
+    .iBtn:hover { color: #2c2416; }
+    .iBtn.d:hover { color: #c0392b; }
+
+    /* ── ADD FORM ── */
+    .add-form { display: flex; flex-direction: column; gap: 5px; }
+    .add-form input, .add-form select {
+      background: #f5f0e8; border: 1px solid #c8bfb0; color: #2c2416;
+      padding: 5px 8px; border-radius: 6px; font-size: 12px; width: 100%;
+    }
+
+    /* ── HISTORY LIST ── */
+    .hist-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 8px; border-radius: 6px; margin-bottom: 3px;
+      background: #f0ebe0; cursor: pointer; transition: background .12s;
+    }
+    .hist-item:hover { background: #e8e0d4; }
+    .hist-date { font-size: 13px; font-weight: 500; flex: 1; }
+    .hist-meta { font-size: 11px; color: #a09080; }
+    .hist-del { background: none; border: none; color: #c0b4a4; cursor: pointer; font-size: 12px; padding: 2px 4px; flex-shrink: 0; }
+    .hist-del:hover { color: #c0392b; }
+
+    /* ── HISTORY DETAIL ── */
+    .hist-detail-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .hist-detail-head h2 { font-size: 15px; font-weight: 600; flex: 1; }
+    .hist-ex-card {
+      background: #ede8de; border: 1px solid #d8d0c4; border-radius: 8px;
+      margin-bottom: 8px; overflow: hidden;
+    }
+    .hist-ex-head {
+      padding: 7px 12px; background: #e8e0d4;
+      font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 7px;
+    }
+    .hist-ex-sets { padding: 7px 12px 9px; }
+    .hist-set-row { display: flex; gap: 10px; padding: 2px 0; font-size: 13px; color: #5a4a3a; }
+    .hist-set-num { color: #a09080; width: 22px; flex-shrink: 0; }
+
+    /* ── EXERCISE CARDS ── */
+    .exercise-card {
+      background: #ede8de; border: 1px solid #d8d0c4; border-radius: 8px; overflow: hidden;
+    }
+    .exercise-header {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 9px 12px; background: #e8e0d4; border-bottom: 1px solid #d8d0c4;
+    }
+    .exercise-title { flex: 1; }
+    .exercise-name { font-size: 14px; font-weight: 600; }
+    .exercise-prev { font-size: 11px; color: #a09080; margin-top: 2px; }
+    .ex-del { background: none; border: none; color: #c0b4a4; cursor: pointer; font-size: 15px; padding: 0 2px; flex-shrink: 0; margin-top: 2px; }
+    .ex-del:hover { color: #c0392b; }
+    .ex-handle { color: #c0b4a4; cursor: grab; font-size: 16px; padding: 0 6px 0 0; flex-shrink: 0; user-select: none; margin-top: 2px; }
+    .ex-handle:hover { color: #8a7966; }
+    .exercise-card.dragging { opacity: 0.3; }
+    .exercise-card.drag-over { border-top: 2px solid #e07020; }
+
+    /* ── SETS TABLE ── */
+    .sets-table { width: auto; border-collapse: collapse; }
+    .sets-table th {
+      text-align: center; padding: 5px 8px; font-size: 10px; color: #a09080;
+      border-bottom: 1px solid #d8d0c4; text-transform: uppercase; letter-spacing: .04em;
+      white-space: nowrap;
+    }
+    .sets-table th:first-child { text-align: left; padding-left: 14px; width: 72px; }
+    .set-row td {
+      padding: 6px 8px; vertical-align: middle; text-align: center;
+      border-bottom: 1px solid #e8e0d4; white-space: nowrap;
+    }
+    .set-row:last-child td { border-bottom: none; }
+    .set-row td:first-child { text-align: left; padding-left: 14px; }
+    .set-row.done { opacity: 0.5; }
+    .set-num { font-size: 12px; color: #a09080; }
+    .num-in {
+      width: 60px; background: #f5f0e8; border: 1px solid #c8bfb0; color: #2c2416;
+      padding: 4px 5px; border-radius: 5px; font-size: 14px; text-align: center;
+    }
+    .num-in:focus { border-color: #e07020; outline: none; background: #fff8f0; }
+    .unit { font-size: 12px; color: #a09080; margin-left: 3px; }
+    .done-btn {
+      width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c8bfb0;
+      background: #f5f0e8; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto;
+      transition: all .15s; color: transparent;
+    }
+    .done-btn.checked { background: #e07020; border-color: #e07020; color: #fff; }
+    .set-del-btn { background: none; border: none; color: #d8d0c4; cursor: pointer; font-size: 14px; padding: 2px 4px; }
+    .set-del-btn:hover { color: #c0392b; }
+    .add-set-row { padding: 7px 12px; }
+    .add-set-btn {
+      background: none; border: 1px dashed #c8bfb0; color: #a09080;
+      border-radius: 6px; padding: 5px 10px; cursor: pointer;
+      font-size: 12px; transition: all .15s;
+    }
+    .add-set-btn:hover { border-color: #e07020; color: #e07020; background: #fff8f0; }
+
+    /* ── RESIZE HANDLE ── */
+    .resize-handle {
+      width: 5px; background: #d8d0c4; cursor: col-resize; flex-shrink: 0;
+      transition: background .15s; position: relative; z-index: 10;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background: #e07020; }
+
+    /* ── CALENDAR ── */
+    .cal-wrap { padding: 12px 10px 14px; }
+    .cal-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .cal-nav-btn {
+      background: none; border: none; cursor: pointer; color: #a09080;
+      font-size: 16px; padding: 3px 9px; border-radius: 4px;
+    }
+    .cal-nav-btn:hover { color: #e07020; background: #e8e0d4; }
+    .cal-title { font-size: 14px; font-weight: 600; color: #2c2416; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-dh { text-align: center; font-size: 11px; color: #a09080; padding: 4px 0; font-weight: 600; }
+    .cal-dh.sun { color: #c0392b; }
+    .cal-dh.sat { color: #2b4a8b; }
+    .cal-day {
+      text-align: center; font-size: 14px; cursor: pointer;
+      padding: 6px 2px 3px; border-radius: 5px; line-height: 1.2;
+      transition: background .12s; user-select: none;
+    }
+    .cal-day:hover:not(.cal-other) { background: #e8e0d4; }
+    .cal-day.cal-other { color: #c8bfb0; cursor: default; font-size: 11px; }
+    .cal-day.cal-today .cal-num { font-weight: 700; color: #c45800; }
+    .cal-day.cal-has .cal-num { color: #e07020; font-weight: 700; }
+    .cal-day.cal-sel { background: #e07020 !important; border-radius: 6px; }
+    .cal-day.cal-sel .cal-num { color: #fff !important; font-weight: 700; }
+    .cal-day.cal-sel .cal-dot { background: #fff; }
+    .cal-num { display: block; }
+    .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: #e07020; margin: 3px auto 0; }
+    .cal-stats { padding: 4px 10px 10px; font-size: 12px; color: #8a7966; line-height: 1.9; }
+    .cal-stats span { color: #c45800; font-weight: 600; }
+
+    /* ── 1RM ── */
+    .rm-val { font-size: 11px; color: #a09080; }
+
+    /* ── INTERVAL TIMER ── */
+    .itimer-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 248; display: flex; align-items: center; justify-content: center;
+    }
+    .itimer-backdrop.hidden { display: none; }
+    .itimer {
+      background: #e07020; color: #fff;
+      border-radius: 24px; padding: 32px 44px;
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.35);
+      transition: background .4s; user-select: none; min-width: 220px;
+    }
+    .itimer.done { background: #27ae60; animation: iflash .35s ease 4; }
+    .itimer-info { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .itimer-label { font-size: 11px; opacity: .85; letter-spacing: .1em; text-transform: uppercase; }
+    .itimer-count { font-size: 56px; font-weight: 700; letter-spacing: 3px; line-height: 1; }
+    .itimer-bar-wrap { width: 160px; height: 5px; background: rgba(255,255,255,.3); border-radius: 3px; }
+    .itimer-bar { height: 5px; background: #fff; border-radius: 3px; transition: width .9s linear; }
+    .itimer-cancel {
+      background: rgba(255,255,255,.2); border: none; color: #fff;
+      border-radius: 999px; padding: 6px 20px;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: background .15s; margin-top: 4px;
+    }
+    .itimer-cancel:hover { background: rgba(255,255,255,.35); }
+    @keyframes iflash {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.05); }
+    }
+
+    /* ── EMPTY / BADGE / BUTTONS ── */
+    .empty { color: #c0b4a4; padding: 48px 20px; font-size: 13px; line-height: 1.9; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+    .btn { padding: 7px 15px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: background .15s; }
+    .btn-p { background: #e07020; color: #fff; font-weight: 600; }
+    .btn-p:hover { background: #c45800; }
+    .btn-g { background: #e8e0d4; color: #2c2416; border: 1px solid #d8d0c4; }
+    .btn-g:hover { background: #d8d0c4; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 10px 20px; background: #ede8de; border-top: 1px solid #d8d0c4;
+      display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+    }
+
+    /* ── SYNC STATUS ── */
+    .sync-dot {
+      width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      transition: background .4s;
+    }
+    .sync-dot.idle    { background: #c8bfb0; }
+    .sync-dot.syncing { background: #f0a030; animation: spin-pulse .8s ease infinite alternate; }
+    .sync-dot.ok      { background: #4caf50; }
+    .sync-dot.err     { background: #e05050; }
+    @keyframes spin-pulse { from { opacity:.5; } to { opacity:1; } }
+    .sync-label { font-size: 11px; color: #a09080; white-space: nowrap; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+      background: #2c2416; color: #fff; padding: 8px 18px;
+      border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity .25s;
+      pointer-events: none; white-space: nowrap; z-index: 300;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── DIALOG ── */
+    dialog {
+      background: #f5f0e8; border: 1px solid #d8d0c4; border-radius: 10px;
+      color: #2c2416; padding: 20px; min-width: 280px; max-width: 90vw;
+    }
+    dialog::backdrop { background: rgba(0,0,0,.35); }
+    dialog h3 { font-size: 15px; margin-bottom: 14px; color: #e07020; font-weight: 600; }
+    dialog label { font-size: 12px; color: #8a7966; display: block; margin: 10px 0 4px; }
+    dialog input, dialog select {
+      width: 100%; background: #ede8de; border: 1px solid #c8bfb0; color: #2c2416;
+      padding: 7px 10px; border-radius: 6px; font-size: 14px;
+    }
+    .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    /* ── MOBILE BOTTOM NAV ── */
+    .bottom-nav {
+      display: none; background: #ede8de; border-top: 1px solid #d8d0c4;
+      flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .bottom-nav-inner { display: flex; }
+    .tab-btn {
+      flex: 1; background: none; border: none; cursor: pointer;
+      padding: 9px 4px 10px; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; color: #a09080; font-size: 10px;
+      font-weight: 500; transition: color .15s;
+    }
+    .tab-btn .ti { font-size: 22px; line-height: 1; }
+    .tab-btn.active { color: #e07020; }
+
+    /* ── MOBILE TAB PANELS ── */
+    .tab-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .tab-panel.active { display: flex; }
+    .tab-panel-body { flex: 1; overflow-y: auto; padding: 10px 12px 0; }
+
+    .mob-footer {
+      padding: 8px 12px; background: #ede8de; border-top: 1px solid #d8d0c4;
+      display: flex; gap: 6px; flex-shrink: 0;
+    }
+    .mob-footer .btn { flex: 1; padding: 10px 6px; font-size: 12px; }
+
+    /* ── RESPONSIVE ── */
+    @media (min-width: 641px) {
+      .panel-left, .panel-center, .panel-right { display: flex; }
+      .panel-center { display: block; }
+      footer { display: flex; }
+      .bottom-nav  { display: none !important; }
+      .tab-panel   { display: none !important; }
+    }
+    @media (max-width: 640px) {
+      body { overflow: hidden; }
+      header { padding: 10px 14px; gap: 8px; }
+      header h1 { font-size: 17px; }
+      .stat { margin-left: 0; font-size: 12px; }
+      .panel-left, .panel-center, .panel-right { display: none; }
+      footer { display: none; }
+      .bottom-nav { display: block; }
+      .num-in { width: 64px; font-size: 15px; padding: 6px 4px; }
+      .done-btn { width: 32px; height: 32px; }
+      .set-row td { padding: 7px 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💪 筋トレログ</h1>
+  <div class="h-field">
+    <span>日付</span>
+    <input type="date" id="dateInput">
+  </div>
+  <div class="stat">
+    <span id="statSets">0</span> セット &nbsp;·&nbsp; ボリューム <span id="statVol">0</span> kg
+  </div>
+  <div style="display:flex;align-items:center;gap:5px;margin-left:6px">
+    <div class="sync-dot idle" id="syncDot" title="クラウド同期状態"></div>
+    <span class="sync-label" id="syncLabel">同期待機</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ══ DESKTOP: 左パネル（ライブラリ） ══ -->
+  <div class="panel-left">
+    <div class="panel-left-body">
+
+      <div class="sec-head">テンプレート</div>
+      <div class="tmpl-row">
+        <select id="tmplSelD"></select>
+        <button class="btn btn-g btn-sm" onclick="loadTmpl('tmplSelD')">読込</button>
+        <button class="btn btn-g btn-sm" onclick="openSaveTmplDlg()">保存</button>
+      </div>
+
+      <div class="sec-head">種目ライブラリ</div>
+      <div id="libBodyD"></div>
+
+      <div class="sec-head">種目を追加</div>
+      <div class="add-form">
+        <select id="cCatD"></select>
+        <input type="text" id="cNameD" placeholder="種目名"
+          onkeydown="if(event.key==='Enter')addCustomEx('cCatD','cNameD')">
+        <button class="btn btn-g btn-sm" onclick="addCustomEx('cCatD','cNameD')">＋ 追加</button>
+      </div>
+
+      <div class="sec-head" style="margin-top:8px">履歴</div>
+      <div id="histBodyD"></div>
+
+    </div>
+  </div>
+
+  <!-- ══ リサイズハンドル ══ -->
+  <div class="resize-handle" id="resizeHandle"></div>
+
+  <!-- ══ DESKTOP: 中央パネル（ワークアウト） ══ -->
+  <div class="panel-center">
+    <div class="workout-list" id="workoutD"></div>
+  </div>
+
+  <!-- ══ DESKTOP: 右パネル（カレンダー） ══ -->
+  <div class="panel-right">
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calMove(-1)">◀</button>
+        <span class="cal-title" id="calTitleD">—</span>
+        <button class="cal-nav-btn" onclick="calMove(1)">▶</button>
+      </div>
+      <div class="cal-grid" id="calGridD"></div>
+    </div>
+    <div class="cal-stats" id="calStatsD"></div>
+  </div>
+
+  <!-- ══ MOBILE: タブパネル ══ -->
+
+  <!-- 今日 -->
+  <div class="tab-panel active" id="tab-today">
+    <div class="tab-panel-body">
+      <div class="workout-list" id="workoutM"></div>
+    </div>
+    <div class="mob-footer">
+      <button class="btn btn-g" onclick="clearToday()">クリア</button>
+      <button class="btn btn-g" onclick="openSaveTmplDlg()">保存</button>
+      <button class="btn btn-p" onclick="sendToObsidian()">Obsidian</button>
+    </div>
+  </div>
+
+  <!-- 種目 -->
+  <div class="tab-panel" id="tab-library">
+    <div class="tab-panel-body">
+      <div class="sec-head" style="padding-top:4px">テンプレート</div>
+      <div class="tmpl-row">
+        <select id="tmplSelM"></select>
+        <button class="btn btn-g btn-sm" onclick="loadTmpl('tmplSelM')">読込</button>
+        <button class="btn btn-g btn-sm" onclick="openSaveTmplDlg()">保存</button>
+      </div>
+      <div class="sec-head">種目ライブラリ</div>
+      <div id="libBodyM"></div>
+      <div class="sec-head">種目を追加</div>
+      <div class="add-form" style="padding-bottom:16px">
+        <select id="cCatM"></select>
+        <input type="text" id="cNameM" placeholder="種目名"
+          onkeydown="if(event.key==='Enter')addCustomEx('cCatM','cNameM')">
+        <button class="btn btn-g btn-sm" onclick="addCustomEx('cCatM','cNameM')">＋ 追加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div class="tab-panel" id="tab-history">
+    <div class="tab-panel-body" id="histBodyM">
+      <!-- カレンダー（モバイル） -->
+      <div class="cal-wrap" style="padding:0 0 10px">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calMove(-1)">◀</button>
+          <span class="cal-title" id="calTitleM">—</span>
+          <button class="cal-nav-btn" onclick="calMove(1)">▶</button>
+        </div>
+        <div class="cal-grid" id="calGridM"></div>
+        <div class="cal-stats" id="calStatsM" style="padding:6px 0 0"></div>
+      </div>
+      <div id="histListM"></div>
+    </div>
+  </div>
+
+</div><!-- /.main -->
+
+<!-- ══ DESKTOP FOOTER ══ -->
+<footer>
+  <button class="btn btn-g" onclick="clearToday()">クリア</button>
+  <button class="btn btn-g" onclick="openSaveTmplDlg()">テンプレートとして保存</button>
+  <button class="btn btn-p" onclick="sendToObsidian()">Obsidianに送る</button>
+</footer>
+
+<!-- ══ MOBILE BOTTOM NAV ══ -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="tab-btn active" id="nav-today"   onclick="switchTab('today')">
+      <span class="ti">🏋️</span><span>今日</span>
+    </button>
+    <button class="tab-btn"        id="nav-library" onclick="switchTab('library')">
+      <span class="ti">📚</span><span>種目</span>
+    </button>
+    <button class="tab-btn"        id="nav-history" onclick="switchTab('history')">
+      <span class="ti">📅</span><span>履歴</span>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<!-- ══ インターバルタイマー ══ -->
+<div class="itimer-backdrop hidden" id="itimerBackdrop" onclick="cancelTimer()">
+  <div class="itimer" id="itimerEl" onclick="event.stopPropagation()">
+    <div class="itimer-info">
+      <span class="itimer-label">インターバル</span>
+      <span class="itimer-count" id="itimerCount">1:00</span>
+    </div>
+    <div class="itimer-bar-wrap"><div class="itimer-bar" id="itimerBar" style="width:100%"></div></div>
+    <button class="itimer-cancel" onclick="cancelTimer()">スキップ</button>
+  </div>
+</div>
+
+<dialog id="saveTmplDlg">
+  <h3>テンプレートとして保存</h3>
+  <label>名前</label>
+  <input type="text" id="tmplNameIn" placeholder="例：胸の日"
+    onkeydown="if(event.key==='Enter')saveTemplate()">
+  <div class="dlg-foot">
+    <button class="btn btn-g btn-sm" onclick="saveTmplDlg.close()">キャンセル</button>
+    <button class="btn btn-p btn-sm" onclick="saveTemplate()">保存</button>
+  </div>
+</dialog>
+
+<dialog id="editExDlg">
+  <h3>種目を編集</h3>
+  <label>種目名</label><input type="text" id="editExName">
+  <label>部位</label><select id="editExCat"></select>
+  <div class="dlg-foot">
+    <button class="btn btn-g btn-sm" onclick="editExDlg.close()">キャンセル</button>
+    <button class="btn btn-p btn-sm" onclick="saveExEdit()">保存</button>
+  </div>
+</dialog>
+
+<script>
+// ── CLOUD SYNC (Google Apps Script) ──────────────────────────────────────────
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwr7buYJO-aZCR2Mig_X1RoJs_ZwHl0Vp2TtfOPN1B9lR868__C61DOEhyQYkEZg5J1/exec';
+let syncTimer = null;
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (dot) { dot.className = 'sync-dot ' + state; }
+  if (lbl) lbl.textContent = label;
+}
+
+// 変更後2秒でシンク（デバウンス）
+function scheduleSheetsSync() {
+  clearTimeout(syncTimer);
+  setSyncStatus('idle', '変更あり');
+  syncTimer = setTimeout(() => {
+    const date = getDate();
+    if (date) syncToSheets(date);
+  }, 2000);
+}
+
+async function syncToSheets(date) {
+  const exercises_snapshot = sessions[date] || null;
+  setSyncStatus('syncing', '同期中…');
+  try {
+    const body = JSON.stringify({
+      action: 'save',
+      date,
+      exercises: exercises_snapshot
+    });
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body
+      // Content-Typeを指定しない → text/plain扱いでプリフライト不要
+    });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      setSyncStatus('ok', '同期済み');
+    } else {
+      throw new Error(json.message || 'error');
+    }
+  } catch (e) {
+    setSyncStatus('err', '同期失敗');
+    console.warn('[Sheets sync error]', e);
+  }
+}
+
+async function loadFromSheets() {
+  setSyncStatus('syncing', '読込中…');
+  try {
+    const res  = await fetch(SCRIPT_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+
+    // ローカルにないデータだけマージ（ローカル優先）
+    let merged = 0;
+    (json.sessions || []).forEach(({ date, exercises: exArr }) => {
+      if (!sessions[date] && exArr && exArr.length) {
+        sessions[date] = exArr;
+        merged++;
+      }
+    });
+
+    localStorage.setItem('wt_sessions', JSON.stringify(sessions));
+    setSyncStatus('ok', merged ? `${merged}件取得` : '同期済み');
+    if (merged) {
+      renderCalendar();
+      renderAllHistory();
+      calcStat();
+    }
+  } catch (e) {
+    setSyncStatus('err', 'オフライン');
+    console.warn('[Sheets load error]', e);
+  }
+}
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+
+const MG_COLORS = {
+  '胸':   { bg:'#f5d5c0', color:'#8b4513' },
+  '背中': { bg:'#c8d8f5', color:'#2b4a8b' },
+  '肩':   { bg:'#fce8a0', color:'#7a5800' },
+  '腕':   { bg:'#c8ecd8', color:'#1e6640' },
+  '脚':   { bg:'#ddd8f0', color:'#4a3a8a' },
+  '体幹': { bg:'#e8e8e8', color:'#606060' },
+};
+const CATS = ['胸','背中','肩','腕','脚','体幹'];
+
+const DEF_EXERCISES = [
+  { id:1,  name:'ダンベルプレス',              category:'胸'   },
+  { id:2,  name:'インクラインプレス',           category:'胸'   },
+  { id:3,  name:'ダンベルフライ',               category:'胸'   },
+  { id:4,  name:'インクラインフライ',           category:'胸'   },
+  { id:5,  name:'ダンベルプルオーバー',         category:'胸'   },
+  { id:6,  name:'ダンベルベンチプレス（床）',   category:'胸'   },
+  { id:10, name:'ダンベルロウ',                 category:'背中' },
+  { id:11, name:'ダンベルデッドリフト',         category:'背中' },
+  { id:12, name:'ベントオーバーロウ',           category:'背中' },
+  { id:20, name:'ダンベルショルダープレス',     category:'肩'   },
+  { id:21, name:'サイドレイズ',                 category:'肩'   },
+  { id:22, name:'フロントレイズ',               category:'肩'   },
+  { id:23, name:'リアレイズ',                   category:'肩'   },
+  { id:30, name:'ダンベルカール',               category:'腕'   },
+  { id:31, name:'ハンマーカール',               category:'腕'   },
+  { id:32, name:'コンセントレーションカール',   category:'腕'   },
+  { id:33, name:'トライセップスキックバック',   category:'腕'   },
+  { id:34, name:'オーバーヘッドエクステンション',          category:'腕'  },
+  { id:35, name:'ダンベルカール＋トライセップスキックバック',category:'腕'  },
+  { id:40, name:'ダンベルスクワット',           category:'脚'   },
+  { id:41, name:'ダンベルランジ',               category:'脚'   },
+  { id:42, name:'ルーマニアンデッドリフト',     category:'脚'   },
+  { id:43, name:'ゴブレットスクワット',         category:'脚'   },
+  { id:50, name:'プランク',                     category:'体幹' },
+  { id:51, name:'クランチ',                     category:'体幹' },
+  { id:52, name:'ロシアンツイスト',             category:'体幹' },
+  { id:53, name:'レッグレイズ',                 category:'体幹' },
+];
+
+const DEF_TEMPLATES = {
+  '全身': [
+    { name:'ゴブレットスクワット',                     sets:3, reps:12 },
+    { name:'ルーマニアンデッドリフト',                  sets:3, reps:10 },
+    { name:'ダンベルベンチプレス（床）',                sets:3, reps:12 },
+    { name:'ベントオーバーロウ',                        sets:3, reps:12 },
+    { name:'ダンベルショルダープレス',                  sets:3, reps:10 },
+    { name:'ダンベルカール＋トライセップスキックバック', sets:2, reps:12 },
+  ],
+  '胸の日': [
+    { name:'ダンベルプレス',       sets:3, reps:10 },
+    { name:'インクラインプレス',   sets:3, reps:10 },
+    { name:'ダンベルフライ',       sets:3, reps:12 },
+    { name:'ダンベルプルオーバー', sets:3, reps:12 },
+  ],
+  '背中・肩の日': [
+    { name:'ダンベルロウ',           sets:3, reps:10 },
+    { name:'ベントオーバーロウ',     sets:3, reps:10 },
+    { name:'ダンベルショルダープレス', sets:3, reps:10 },
+    { name:'サイドレイズ',           sets:3, reps:15 },
+    { name:'リアレイズ',             sets:3, reps:15 },
+  ],
+  '腕・体幹の日': [
+    { name:'ダンベルカール',             sets:3, reps:12 },
+    { name:'ハンマーカール',             sets:3, reps:12 },
+    { name:'トライセップスキックバック', sets:3, reps:12 },
+    { name:'プランク',                   sets:3, reps:30 },
+    { name:'クランチ',                   sets:3, reps:20 },
+  ],
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+let exercises    = [];
+let workout      = [];   // [{exId,name,category,sets:[{weight,reps,done}]}]
+let sessions     = {};   // {'YYYY-MM-DD': workout snapshot}
+let templates    = {};
+let nextExId     = 200;
+let editingExId  = null;
+let histDetail   = null; // 表示中の履歴日付
+let calYear      = new Date().getFullYear();
+let calMonth     = new Date().getMonth();
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+
+function save() {
+  const date = getDate();
+  if (date) {
+    if (workout.length > 0) {
+      // ワークアウトがあれば記録
+      sessions[date] = workout.map(ex => ({
+        ...ex, sets: ex.sets.map(s => ({...s}))
+      }));
+    } else {
+      // 空になったらその日の記録を削除（カレンダーの色も消える）
+      delete sessions[date];
+    }
+  }
+  localStorage.setItem('wt_exercises', JSON.stringify(exercises));
+  localStorage.setItem('wt_workout',   JSON.stringify(workout));
+  localStorage.setItem('wt_sessions',  JSON.stringify(sessions));
+  localStorage.setItem('wt_templates', JSON.stringify(templates));
+  scheduleSheetsSync();
+}
+
+function loadState() {
+  exercises = JSON.parse(localStorage.getItem('wt_exercises') || 'null') || DEF_EXERCISES.map(e=>({...e}));
+  workout   = JSON.parse(localStorage.getItem('wt_workout')   || '[]');
+  sessions  = JSON.parse(localStorage.getItem('wt_sessions')  || '{}');
+  templates = JSON.parse(localStorage.getItem('wt_templates') || 'null') || JSON.parse(JSON.stringify(DEF_TEMPLATES));
+
+  // ── マイグレーション: DEF_EXERCISESに追加された種目を自動補完 ──
+  DEF_EXERCISES.forEach(def => {
+    if (!exercises.find(e => e.id === def.id)) {
+      exercises.push({...def});
+    }
+  });
+
+  // ── マイグレーション: 「全身」テンプレートを常に先頭に ──
+  const zenshin = DEF_TEMPLATES['全身'];
+  if (zenshin) {
+    const rebuilt = { '全身': zenshin };
+    Object.keys(templates).forEach(k => { if (k !== '全身') rebuilt[k] = templates[k]; });
+    templates = rebuilt;
+  }
+
+  nextExId = Math.max(...exercises.map(e=>e.id), 199) + 1;
+
+  const today = new Date().toISOString().slice(0,10);
+  const saved = localStorage.getItem('wt_date') || today;
+  document.getElementById('dateInput').value = saved;
+}
+
+function getDate() { return document.getElementById('dateInput').value; }
+
+// 日付変更 → 対応するセッションを読み込む
+document.getElementById('dateInput').addEventListener('input', e => {
+  const date = e.target.value;
+  localStorage.setItem('wt_date', date);
+  if (sessions[date]) {
+    workout = sessions[date].map(ex => ({
+      ...ex, sets: ex.sets.map(s => ({...s}))
+    }));
+  } else {
+    workout = [];
+  }
+  renderAllWorkout();
+  calcStat();
+  renderCalendar();
+  renderAllHistory();
+});
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+
+function toast(msg) {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function getCatColor(cat) { return MG_COLORS[cat] || { bg:'#e8e8e8', color:'#606060' }; }
+
+function badge(cat) {
+  const c = getCatColor(cat);
+  return `<span class="badge" style="background:${c.bg};color:${c.color}">${cat}</span>`;
+}
+
+// 前回セッションのデータを取得
+function getPrev(exName) {
+  const curDate = getDate();
+  const dates = Object.keys(sessions).sort().reverse();
+  for (const d of dates) {
+    if (d >= curDate) continue;
+    const ex = sessions[d].find(e => e.name === exName);
+    if (ex && ex.sets.length) return { date: d, sets: ex.sets };
+  }
+  return null;
+}
+
+function calcStat() {
+  let vol = 0, sets = 0;
+  workout.forEach(ex => ex.sets.forEach(s => {
+    sets++;
+    vol += (s.weight || 0) * (s.reps || 0);
+  }));
+  document.getElementById('statSets').textContent = sets;
+  document.getElementById('statVol').textContent  = vol.toLocaleString();
+}
+
+// ── CATEGORIES ────────────────────────────────────────────────────────────────
+
+function renderCatSelects() {
+  const opts = CATS.map(c => `<option>${c}</option>`).join('');
+  ['cCatD','cCatM','editExCat'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+}
+
+// ── LIBRARY ───────────────────────────────────────────────────────────────────
+
+function renderLib(targetId) {
+  const body = document.getElementById(targetId);
+  if (!body) return;
+  body.innerHTML = '';
+  const usedCats = [...new Set(exercises.map(e => e.category))];
+  const ordered  = [...CATS.filter(c => usedCats.includes(c)),
+                    ...usedCats.filter(c => !CATS.includes(c))];
+  ordered.forEach(cat => {
+    const items = exercises.filter(e => e.category === cat);
+    if (!items.length) return;
+    const cc = getCatColor(cat);
+    body.insertAdjacentHTML('beforeend',
+      `<div class="cat-label" style="background:${cc.bg};color:${cc.color};border-left-color:${cc.color}">${cat}</div>`);
+    items.forEach(ex => {
+      const d = document.createElement('div');
+      d.className = 'lib-item';
+      d.innerHTML = `
+        <span class="lib-name" onclick="addExToWorkout(${ex.id})">${ex.name}</span>
+        <button class="iBtn"   onclick="openEditEx(${ex.id})" title="編集">✎</button>
+        <button class="iBtn d" onclick="deleteEx(${ex.id})"   title="削除">✕</button>
+      `;
+      body.appendChild(d);
+    });
+  });
+}
+
+function renderAllLib() {
+  renderLib('libBodyD');
+  renderLib('libBodyM');
+}
+
+function addCustomEx(catId, nameId) {
+  const name = document.getElementById(nameId).value.trim();
+  const cat  = document.getElementById(catId).value;
+  if (!name) { toast('種目名を入力してください'); return; }
+  if (exercises.some(e => e.name === name)) { toast('同じ名前の種目があります'); return; }
+  exercises.push({ id: nextExId++, name, category: cat });
+  document.getElementById(nameId).value = '';
+  save(); renderAllLib();
+  toast(`「${name}」を追加しました`);
+}
+
+function openEditEx(id) {
+  const ex = exercises.find(e => e.id === id);
+  if (!ex) return;
+  editingExId = id;
+  document.getElementById('editExName').value = ex.name;
+  document.getElementById('editExCat').value  = ex.category;
+  document.getElementById('editExDlg').showModal();
+}
+
+function saveExEdit() {
+  const ex = exercises.find(e => e.id === editingExId);
+  if (!ex) return;
+  const n = document.getElementById('editExName').value.trim() || ex.name;
+  const c = document.getElementById('editExCat').value;
+  workout.forEach(w => { if (w.exId === ex.id) { w.name = n; w.category = c; } });
+  ex.name = n; ex.category = c;
+  document.getElementById('editExDlg').close();
+  save(); renderAllLib(); renderAllWorkout();
+}
+
+function deleteEx(id) {
+  if (!confirm('この種目をライブラリから削除しますか？')) return;
+  exercises = exercises.filter(e => e.id !== id);
+  save(); renderAllLib();
+}
+
+// ── WORKOUT ───────────────────────────────────────────────────────────────────
+
+function addExToWorkout(exId) {
+  const ex = exercises.find(e => e.id === exId);
+  if (!ex) return;
+  if (workout.some(w => w.exId === exId)) {
+    toast(`「${ex.name}」はすでに追加されています`); return;
+  }
+  const prev    = getPrev(ex.name);
+  const lastSet = prev ? prev.sets[prev.sets.length - 1] : null;
+  workout.push({
+    exId: ex.id, name: ex.name, category: ex.category,
+    sets: [{ weight: lastSet ? lastSet.weight : 0, reps: lastSet ? lastSet.reps : 10, done: false }]
+  });
+  save(); renderAllWorkout(); calcStat(); renderCalendar(); renderAllHistory();
+  if (window.innerWidth <= 640) switchTab('today');
+}
+
+function addSet(exIdx) {
+  const last = workout[exIdx].sets.at(-1);
+  workout[exIdx].sets.push({ weight: last ? last.weight : 0, reps: last ? last.reps : 10, done: false });
+  save(); renderAllWorkout();
+}
+
+function toggleDone(exIdx, setIdx) {
+  workout[exIdx].sets[setIdx].done = !workout[exIdx].sets[setIdx].done;
+  const nowDone = workout[exIdx].sets[setIdx].done;
+  save(); renderAllWorkout(); calcStat();
+  if (nowDone) startIntervalTimer();
+}
+
+function updateWeight(exIdx, setIdx, val) {
+  const v = parseFloat(val);
+  if (!isNaN(v) && v >= 0) { workout[exIdx].sets[setIdx].weight = v; save(); calcStat(); }
+}
+
+function updateReps(exIdx, setIdx, val) {
+  const v = parseInt(val);
+  if (!isNaN(v) && v > 0) { workout[exIdx].sets[setIdx].reps = v; save(); calcStat(); }
+}
+
+function deleteSet(exIdx, setIdx) {
+  workout[exIdx].sets.splice(setIdx, 1);
+  if (!workout[exIdx].sets.length) workout.splice(exIdx, 1);
+  save(); renderAllWorkout(); calcStat(); renderCalendar(); renderAllHistory();
+}
+
+function deleteExFromWorkout(exIdx) {
+  workout.splice(exIdx, 1);
+  save(); renderAllWorkout(); calcStat(); renderCalendar(); renderAllHistory();
+}
+
+function clearToday() {
+  if (workout.length && !confirm('今日のワークアウトをクリアしますか？')) return;
+  const date = getDate();
+  workout = [];
+  if (date) delete sessions[date];
+  localStorage.setItem('wt_workout',  JSON.stringify(workout));
+  localStorage.setItem('wt_sessions', JSON.stringify(sessions));
+  renderAllWorkout(); calcStat(); renderCalendar(); renderAllHistory();
+}
+
+function buildCard(ex, i) {
+  const prev = getPrev(ex.name);
+  let prevText = '前回記録なし';
+  if (prev) {
+    prevText = `前回(${prev.date}): ${prev.sets.map(s=>`${s.weight}kg×${s.reps}`).join(' · ')}`;
+  }
+  const rows = ex.sets.map((s, si) => {
+    const rm = calcRM(s.weight, s.reps);
+    const rmText = rm ? `<span class="rm-val">${rm}kg</span>` : '<span class="rm-val">—</span>';
+    return `
+    <tr class="set-row${s.done ? ' done' : ''}">
+      <td><span class="set-num">セット${si+1}</span></td>
+      <td>
+        <input class="num-in" type="number" value="${s.weight}" min="0" step="2"
+          onchange="updateWeight(${i},${si},this.value)" onclick="this.select()">
+        <span class="unit">kg</span>
+      </td>
+      <td>
+        <input class="num-in" type="number" value="${s.reps}" min="1" step="1"
+          onchange="updateReps(${i},${si},this.value)" onclick="this.select()">
+        <span class="unit">回</span>
+      </td>
+      <td>${rmText}</td>
+      <td>
+        <button class="done-btn${s.done ? ' checked' : ''}" onclick="toggleDone(${i},${si})">✓</button>
+      </td>
+      <td><button class="set-del-btn" onclick="deleteSet(${i},${si})">✕</button></td>
+    </tr>
+  `;}).join('');
+
+  return `
+    <div class="exercise-card" draggable="true"
+      ondragstart="exDragStart(event,${i})"
+      ondragover="exDragOver(event,${i})"
+      ondrop="exDrop(event,${i})"
+      ondragend="exDragEnd(event)">
+      <div class="exercise-header">
+        <span class="ex-handle">⠿</span>
+        <div class="exercise-title">
+          <div class="exercise-name">${badge(ex.category)} ${ex.name}</div>
+          <div class="exercise-prev">${prevText}</div>
+        </div>
+        <button class="ex-del" onclick="deleteExFromWorkout(${i})">✕</button>
+      </div>
+      <table class="sets-table">
+        <thead>
+          <tr>
+            <th>セット</th><th>重量</th><th>回数</th>
+            <th style="width:52px">推定1RM</th>
+            <th style="width:46px">完了</th><th style="width:30px"></th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="add-set-row">
+        <button class="add-set-btn" onclick="addSet(${i})">＋ セットを追加</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderWorkout(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  if (!workout.length) {
+    el.innerHTML = `<div class="empty">種目ライブラリの種目名をクリックして追加</div>`;
+    return;
+  }
+  el.innerHTML = workout.map((ex, i) => buildCard(ex, i)).join('');
+}
+
+function renderAllWorkout() {
+  renderWorkout('workoutD');
+  renderWorkout('workoutM');
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
+
+function renderHistList(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const dates = Object.keys(sessions).sort().reverse();
+  if (!dates.length) {
+    el.innerHTML = '<div class="empty" style="padding:16px 0">保存された記録がありません</div>';
+    return;
+  }
+  el.innerHTML = dates.map(d => {
+    const s    = sessions[d];
+    const sets = s.reduce((a, ex) => a + ex.sets.length, 0);
+    return `
+      <div class="hist-item" onclick="showHistDetail('${d}','${targetId}')">
+        <span class="hist-date">📅 ${d}</span>
+        <span class="hist-meta">${s.length}種目 / ${sets}セット</span>
+        <button class="hist-del" onclick="event.stopPropagation();deleteSession('${d}')">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function showHistDetail(date, containerId) {
+  histDetail = date;
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const s = sessions[date];
+  const totalVol = s.reduce((a, ex) =>
+    a + ex.sets.reduce((b, set) => b + (set.weight||0)*(set.reps||0), 0), 0);
+
+  el.innerHTML = `
+    <div class="hist-detail-head">
+      <button class="btn btn-g btn-sm" onclick="histDetail=null;renderAllHistory()">← 戻る</button>
+      <h2>${date}</h2>
+      <button class="btn btn-g btn-sm" onclick="loadHistSession('${date}')">読込</button>
+    </div>
+    <div style="font-size:12px;color:#a09080;margin-bottom:10px">
+      総ボリューム: <strong style="color:#c45800">${totalVol.toLocaleString()} kg</strong>
+    </div>
+    ${s.map(ex => `
+      <div class="hist-ex-card">
+        <div class="hist-ex-head">${badge(ex.category)} ${ex.name}</div>
+        <div class="hist-ex-sets">
+          ${ex.sets.map((set, i) => `
+            <div class="hist-set-row">
+              <span class="hist-set-num">${i+1}.</span>
+              <span>${set.weight} kg × ${set.reps} 回</span>
+              ${set.done ? '<span style="color:#e07020;font-size:11px;margin-left:4px">✓</span>' : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function loadHistSession(date) {
+  if (workout.length && !confirm(`${date}のデータを読み込みます。\n現在のワークアウトは消えます。`)) return;
+  workout = sessions[date].map(ex => ({
+    ...ex, sets: ex.sets.map(s => ({...s, done: false}))
+  }));
+  document.getElementById('dateInput').value = date;
+  localStorage.setItem('wt_date', date);
+  save(); renderAllWorkout(); calcStat(); renderCalendar();
+  toast(`${date} を読み込みました`);
+  if (window.innerWidth <= 640) switchTab('today');
+}
+
+function deleteSession(date) {
+  if (!confirm(`${date} の記録を削除しますか？`)) return;
+  delete sessions[date];
+  if (histDetail === date) histDetail = null;
+  if (getDate() === date) { workout = []; renderAllWorkout(); calcStat(); }
+  localStorage.setItem('wt_sessions', JSON.stringify(sessions));
+  renderCalendar(); renderAllHistory();
+  toast(`${date} を削除しました`);
+}
+
+function renderAllHistory() {
+  if (histDetail && sessions[histDetail]) {
+    showHistDetail(histDetail, 'histBodyD');
+    showHistDetail(histDetail, 'histListM');
+  } else {
+    histDetail = null;
+    renderHistList('histBodyD');
+    renderHistList('histListM');
+  }
+}
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+
+function renderTmplSels() {
+  const keys = Object.keys(templates);
+  const opts = keys.length
+    ? keys.map(k => `<option value="${k}">${k}</option>`).join('')
+    : '<option disabled value="">テンプレートなし</option>';
+  ['tmplSelD','tmplSelM'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+}
+
+function loadTmpl(selId) {
+  const name = document.getElementById(selId).value;
+  if (!templates[name]) return;
+  if (workout.length && !confirm(`「${name}」を読み込みます。\n現在のワークアウトは消えます。`)) return;
+  workout = [];
+  (templates[name] || []).forEach(item => {
+    // 旧形式(string)と新形式({name,sets,reps})の両方に対応
+    const exName  = typeof item === 'string' ? item : item.name;
+    const tmplSets = typeof item === 'object' ? (item.sets || 1) : 1;
+    const tmplReps = typeof item === 'object' ? (item.reps || 10) : 10;
+
+    const ex = exercises.find(e => e.name === exName);
+    if (!ex) return;
+    const prev = getPrev(ex.name);
+    const last = prev ? prev.sets.at(-1) : null;
+    const w = last ? last.weight : 0;
+    // テンプレートのセット数分だけセットを生成
+    const sets = Array.from({ length: tmplSets }, () => ({
+      weight: w, reps: tmplReps, done: false
+    }));
+    workout.push({ exId: ex.id, name: ex.name, category: ex.category, sets });
+  });
+  save(); renderAllWorkout(); calcStat(); renderCalendar(); renderAllHistory();
+  if (window.innerWidth <= 640) switchTab('today');
+}
+
+function openSaveTmplDlg() {
+  if (!workout.length) { toast('ワークアウトが空です'); return; }
+  document.getElementById('tmplNameIn').value = '';
+  document.getElementById('saveTmplDlg').showModal();
+  setTimeout(() => document.getElementById('tmplNameIn').focus(), 50);
+}
+
+function saveTemplate() {
+  const name = document.getElementById('tmplNameIn').value.trim();
+  if (!name) return;
+  // セット数・レップ数も保存する {name, sets, reps} 形式
+  templates[name] = workout.map(ex => ({
+    name: ex.name,
+    sets: ex.sets.length,
+    reps: ex.sets[0] ? ex.sets[0].reps : 10
+  }));
+  document.getElementById('saveTmplDlg').close();
+  save(); renderTmplSels();
+  toast(`「${name}」を保存しました`);
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+
+function renderCalendar() {
+  _renderCal('calTitleD', 'calGridD', 'calStatsD');
+  _renderCal('calTitleM', 'calGridM', 'calStatsM');
+}
+
+function _renderCal(titleId, gridId, statsId) {
+  const titleEl = document.getElementById(titleId);
+  const gridEl  = document.getElementById(gridId);
+  const statsEl = document.getElementById(statsId);
+  if (!titleEl || !gridEl) return;
+
+  const today   = new Date().toISOString().slice(0, 10);
+  const selDate = getDate();
+  const pad     = n => String(n).padStart(2, '0');
+
+  titleEl.textContent = `${calYear}年${calMonth + 1}月`;
+
+  // 曜日ヘッダー
+  const DAY_HEADS = ['日','月','火','水','木','金','土'];
+  let html = DAY_HEADS.map((d, i) =>
+    `<div class="cal-dh${i===0?' sun':i===6?' sat':''}">${d}</div>`
+  ).join('');
+
+  const firstWd   = new Date(calYear, calMonth, 1).getDay();
+  const daysInMon = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevDays  = new Date(calYear, calMonth, 0).getDate();
+
+  // 前月の余白
+  for (let i = firstWd - 1; i >= 0; i--) {
+    html += `<div class="cal-day cal-other">${prevDays - i}</div>`;
+  }
+
+  // 当月
+  for (let d = 1; d <= daysInMon; d++) {
+    const dateStr  = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const hasData  = !!sessions[dateStr];
+    const isToday  = dateStr === today;
+    const isSel    = dateStr === selDate;
+    let cls = 'cal-day';
+    if (isToday)        cls += ' cal-today';
+    if (isSel)          cls += ' cal-sel';
+    if (hasData && !isSel) cls += ' cal-has';
+    html += `
+      <div class="${cls}" onclick="jumpToDate('${dateStr}')">
+        <span class="cal-num">${d}</span>
+        ${hasData ? '<div class="cal-dot"></div>' : ''}
+      </div>
+    `;
+  }
+
+  // 後月の余白（6行埋め）
+  const total = firstWd + daysInMon;
+  const trail = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= trail; d++) {
+    html += `<div class="cal-day cal-other">${d}</div>`;
+  }
+
+  gridEl.innerHTML = html;
+
+  // 当月統計
+  if (statsEl) {
+    const prefix = `${calYear}-${pad(calMonth+1)}`;
+    const monthDates = Object.keys(sessions).filter(d => d.startsWith(prefix));
+    const monthVol   = monthDates.reduce((a, d) =>
+      a + sessions[d].reduce((b, ex) =>
+        b + ex.sets.reduce((c, s) => c + (s.weight||0)*(s.reps||0), 0), 0), 0);
+    statsEl.innerHTML = monthDates.length
+      ? `<span>${calMonth+1}月:</span> <span>${monthDates.length}回</span> · <span>${monthVol.toLocaleString()} kg</span>`
+      : `<span>${calMonth+1}月: 記録なし</span>`;
+  }
+}
+
+function calMove(dir) {
+  calMonth += dir;
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0;  calYear++; }
+  renderCalendar();
+}
+
+function jumpToDate(date) {
+  document.getElementById('dateInput').value = date;
+  document.getElementById('dateInput').dispatchEvent(new Event('input'));
+}
+
+// ── OBSIDIAN EXPORT ───────────────────────────────────────────────────────────
+
+function sendToObsidian() {
+  if (!workout.length) { toast('ワークアウトが空です'); return; }
+  const date  = getDate() || new Date().toISOString().slice(0,10);
+  const title = `Workout - ${date}`;
+  const file  = `01_note/Workout/${title}`;
+  const totalVol = workout.reduce((a, ex) =>
+    a + ex.sets.reduce((b, s) => b + (s.weight||0)*(s.reps||0), 0), 0);
+
+  let md = `---\ncreated: ${date}\ntags:\n  - 筋トレ\n---\n\n# ${title}\n\n`;
+  md += `総ボリューム: **${totalVol.toLocaleString()} kg** / ${workout.reduce((a,ex)=>a+ex.sets.length,0)} セット\n\n`;
+  workout.forEach(ex => {
+    md += `## ${ex.name}（${ex.category}）\n\n`;
+    md += `| セット | 重量 | 回数 | 完了 |\n|--------|------|------|------|\n`;
+    ex.sets.forEach((s, i) => {
+      md += `| ${i+1} | ${s.weight} kg | ${s.reps} 回 | ${s.done ? '✓' : '-'} |\n`;
+    });
+    md += '\n';
+  });
+
+  const uri = `obsidian://new?vault=daigoro&file=${encodeURIComponent(file)}&content=${encodeURIComponent(md)}`;
+  window.location.href = uri;
+}
+
+// ── MOBILE TABS ───────────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  ['today','library','history'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'history') renderCalendar();
+}
+
+// ── INTERVAL TIMER ────────────────────────────────────────────────────────────
+
+const TIMER_TOTAL = 60; // 秒
+let timerHandle  = null;
+let timerRemain  = TIMER_TOTAL;
+
+function startIntervalTimer() {
+  clearInterval(timerHandle);
+  timerRemain = TIMER_TOTAL;
+
+  document.getElementById('itimerBackdrop').classList.remove('hidden');
+  const el = document.getElementById('itimerEl');
+  el.classList.remove('done');
+  updateTimerDisplay();
+
+  // ブラウザ通知の許可をリクエスト（初回のみダイアログ）
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  timerHandle = setInterval(() => {
+    timerRemain--;
+    updateTimerDisplay();
+    if (timerRemain <= 0) {
+      clearInterval(timerHandle);
+      timerHandle = null;
+      onTimerFinish();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerRemain / 60);
+  const s = timerRemain % 60;
+  document.getElementById('itimerCount').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  // プログレスバー
+  const pct = (timerRemain / TIMER_TOTAL) * 100;
+  document.getElementById('itimerBar').style.width = pct + '%';
+}
+
+function onTimerFinish() {
+  const el = document.getElementById('itimerEl');
+  el.classList.add('done');
+  document.getElementById('itimerCount').textContent = '完了！';
+  document.getElementById('itimerBar').style.width = '100%';
+
+  playBeep();
+
+  if ('vibrate' in navigator) navigator.vibrate([200, 100, 200, 100, 300]);
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('💪 インターバル終了！', { body: '次のセットを始めましょう' });
+  }
+
+  // 4秒後に自動で閉じる
+  setTimeout(() => {
+    document.getElementById('itimerBackdrop').classList.add('hidden');
+    el.classList.remove('done');
+  }, 4000);
+}
+
+function cancelTimer() {
+  clearInterval(timerHandle);
+  timerHandle = null;
+  document.getElementById('itimerBackdrop').classList.add('hidden');
+  document.getElementById('itimerEl').classList.remove('done');
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // 短いビープを3回
+    [0, 0.28, 0.56].forEach((t, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = i === 2 ? 1046 : 880; // 最後だけ高音
+      gain.gain.setValueAtTime(0.35, ctx.currentTime + t);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.22);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.22);
+    });
+  } catch (_) { /* 非対応環境は無視 */ }
+}
+
+// ── 1RM CALCULATION (Epley formula) ──────────────────────────────────────────
+
+function calcRM(weight, reps) {
+  if (!weight || weight <= 0 || !reps || reps <= 0) return null;
+  if (reps === 1) return weight;
+  const raw = weight * (1 + reps / 30);
+  // 0.5kg単位で丸める
+  return Math.round(raw * 2) / 2;
+}
+
+// ── EXERCISE CARD DRAG & DROP ─────────────────────────────────────────────────
+
+let exDragFrom = null;
+
+function exDragStart(e, i) {
+  exDragFrom = i;
+  e.dataTransfer.effectAllowed = 'move';
+  // 少し遅らせてdragging classを付ける（ドラッグ画像が消えないように）
+  setTimeout(() => {
+    document.querySelectorAll('.exercise-card').forEach((c, idx) => {
+      if (idx % (workout.length) === i) c.classList.add('dragging');
+    });
+  }, 0);
+}
+
+function exDragOver(e, i) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+
+function exDrop(e, i) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (exDragFrom === null || exDragFrom === i) { exDragFrom = null; return; }
+  const [moved] = workout.splice(exDragFrom, 1);
+  workout.splice(i, 0, moved);
+  exDragFrom = null;
+  save(); renderAllWorkout();
+}
+
+function exDragEnd(e) {
+  exDragFrom = null;
+  document.querySelectorAll('.exercise-card').forEach(c => {
+    c.classList.remove('dragging', 'drag-over');
+  });
+}
+
+// ── RESIZE HANDLE ─────────────────────────────────────────────────────────────
+
+(function initResize() {
+  const handle   = document.getElementById('resizeHandle');
+  const panelL   = document.querySelector('.panel-left');
+  if (!handle || !panelL) return;
+
+  // 保存された幅を復元
+  const saved = localStorage.getItem('wt_leftWidth');
+  if (saved) panelL.style.width = saved + 'px';
+
+  let dragging = false, startX = 0, startW = 0;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true; startX = e.clientX; startW = panelL.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const w = Math.max(160, Math.min(480, startW + e.clientX - startX));
+    panelL.style.width = w + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem('wt_leftWidth', panelL.offsetWidth);
+  });
+})();
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+loadState();
+renderCatSelects();
+renderAllLib();
+renderTmplSels();
+renderAllWorkout();
+renderAllHistory();
+calcStat();
+renderCalendar();
+// クラウドからセッションを読み込んでマージ（オフライン時はエラーを無視）
+loadFromSheets();
+</script>
+</body>
+</html>
